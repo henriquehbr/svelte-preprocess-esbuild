@@ -1,6 +1,6 @@
 import { readFile, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
-import * as esbuild from 'esbuild';
+import esbuild from 'esbuild';
 import { promisify } from 'util';
 
 const read = promisify(readFile);
@@ -107,7 +107,7 @@ async function transform(input: ProcessorInput, options: TransformOptions): Prom
 }
 
 /** @note Use `options.define` for replacements */
-export function typescript(options: Partial<Options> = {}): PreprocessorGroup {
+export async function typescript(options: Partial<Options> = {}): Promise<PreprocessorGroup> {
 	let { tsconfig, loglevel='error', ...config } = options as Options & TransformOptions;
 
 	config = {
@@ -128,7 +128,8 @@ export function typescript(options: Partial<Options> = {}): PreprocessorGroup {
 		let file = resolve(tsconfig || 'tsconfig.json');
 
 		try {
-			contents = require(file);
+			file = new URL(`file:///${file}`).href;
+			contents = await import(file);
 		} catch (err) {
 			if (err.code !== 'MODULE_NOT_FOUND') {
 				return bail(err, 'Error while parsing "tsconfig" file:', file);
